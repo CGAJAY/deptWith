@@ -1,11 +1,18 @@
 // Import the 'User' model from the User file, which allows interaction with the User collection in the database
 import { User } from "../database/models/User.model.js";
 
+import bcrypt from "bcryptjs"; // Import bcrypt for password hashing
+
 // Define an asynchronous function to handle user registration
 export const registerUser = async (req, res) => {
 	try {
 		// Destructure the required fields from the request body
 		const { username, email, phone, password } = req.body;
+
+		// Generating a salt for password hashing
+		const salt = bcrypt.genSaltSync(10);
+		// Hashing the password using the generated salt
+		const hashedPassword = bcrypt.hashSync(password, salt);
 
 		// Check if any of the required fields are missing and send a 400 error response if so
 		if (!username || !email || !phone || !password) {
@@ -35,12 +42,12 @@ export const registerUser = async (req, res) => {
 			return;
 		}
 
-		// Create a new user in the database using the provided details
+		// Creating a new user in the database with the provided data
 		const user = await User.create({
 			username,
 			email,
 			phone,
-			password,
+			password: hashedPassword, // Store the hashed password instead of the plain password
 		});
 
 		// Send back the created user data as a response
