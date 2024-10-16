@@ -1,27 +1,26 @@
-import { Schema, model } from "mongoose";
+// Import 'model' and 'Schema' from mongoose
+// 'Schema' is used to define the structure of documents in a MongoDB collection
+// 'model' creates a usable model based on the schema, allowing interaction with the collection
+import { model, Schema } from "mongoose";
 
-const userBalanceSchema = new Schema(
+// Define the schema for a 'Balance' collection in the database
+// The schema outlines the fields and their types for each balace document
+const balanceSchema = new Schema(
 	{
-		// ObjectId to reference another user document
-		user_id: {
+		user: {
 			type: Schema.Types.ObjectId,
-			// Reference to the User model
 			ref: "User",
 			required: true,
 		},
 		balance: {
-			type: Number, // Balance is a number
-			required: true, // Make balance required
-			default: 0, // Set default balance to 0
+			type: Number,
+			required: true,
+			default: 0,
 		},
 	},
-	{
-		timestamps: true, // Automatically create createdAt and updatedAt fields
-	}
+	{ timestamps: true }
 );
 
-// Create a model from the schema
-const UserBalance = model("UserBalance", userBalanceSchema);
+const Balance = model("Balance", balanceSchema);
 
-// Export the model
-export default UserBalance;
+export { Balance };
