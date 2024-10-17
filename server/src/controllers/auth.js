@@ -61,6 +61,48 @@ export const registerUser = async (req, res) => {
 };
 
 // Define the loginUser function to handle login requests
-export const loginUser = (req, res) => {
-	res.send("Get login endpoint");
+export const loginUser = async (req, res) => {
+	try {
+		// Destructure the email and password from the request body
+		const { username, password } = req.body;
+
+		// Check if a user with this email exists in the database
+		const user = await User.findOne({ email });
+
+		// If no user is found, return a 400 status with an error message
+		if (!user) {
+			res.status(400).json({
+				message: "Invalid email or password.",
+			});
+			return; // Exit if the user is not found
+		}
+
+		// Compare the provided password with the stored hashed password
+		const isPasswordValid = await bcrypt.compare(
+			password,
+			user.password
+		);
+
+		// If the password is incorrect, return a 400 status with an error message
+		if (!isPasswordValid) {
+			res.status(400).json({
+				message: "Invalid email or password.",
+			});
+			return; // Exit if the password is incorrect
+		}
+
+		// If login is successful, send the user data (without the password) as a response
+		res.json({
+			message: "Login successful",
+			user: {
+				id: user._id,
+				username: user.username,
+				email: user.email,
+				phone: user.phone,
+			},
+		});
+	} catch (error) {
+		console.log(error);
+		res.status(500).json({ message: "Server error" });
+	}
 };
