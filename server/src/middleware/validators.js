@@ -67,3 +67,39 @@ export const validateUserRegistration = async (
 	// Call the next middleware function if all validations pass
 	next();
 };
+
+// Middleware function to validate user login input
+export const validateUserLogin = (req, res, next) => {
+	// Destructure the email and password from the request body
+	const { username, password } = req.body;
+
+	// Check if username & password are provided
+	if (!username || !password) {
+		// If either field is missing, respond with a 400 status and an error message
+		res.status(400).json({
+			message: "All fields are required.",
+		});
+		return; // Exit the function if validation fails
+	}
+
+	// Check if the username is an empty string
+	if (username.trim() === "") {
+		// If the username is empty, respond with a 400 status and an error message
+		res.status(400).json({
+			message: "Username cannot be empty",
+		});
+		return; // Exit the function if validation fails
+	}
+
+	// Check if the password length is greater than 5 characters
+	if (password.length < 6) {
+		// If the password is too short, respond with a 400 status and an error message
+		res.status(400).json({
+			message: "Password must be longer than 5 characters.",
+		});
+		return; // Exit the function if validation fails
+	}
+
+	// If all validations pass, call the next middleware or controller
+	next();
+};
