@@ -1,5 +1,5 @@
 // Middleware function to validate user registration input
-export const validateUserRegistration = (
+export const validateUserRegistration = async (
 	req,
 	res,
 	next
@@ -26,7 +26,6 @@ export const validateUserRegistration = (
 	}
 
 	// Validate the email format using a regular expression (regex)
-	// A basic check to ensure the email is in the format: something@something.something
 	const emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
 
 	// Test the email against the regex pattern
@@ -38,18 +37,33 @@ export const validateUserRegistration = (
 		return; // Exit the function if validation fails
 	}
 
-	// Later I'll add additional password validation here, such as:
-	// - At least 6 characters long
-	// - Contains at least one number
-	// - Contains at least one lowercase letter
-	// - Contains at least one uppercase letter
+	// Password validation format using a regular expression (regex)
+	const passwordRegex =
+		/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+
+	// Check if the password meets the criteria
+	if (!passwordRegex.test(password)) {
+		// If the password is invalid, respond with a 400 status and an error message
+		res.status(400).json({
+			message:
+				"Password must be at least 6 characters long, contain at least one number, one lowercase letter, and one uppercase letter.",
+		});
+		return; // Exit the function if validation fails
+	}
+
+	// Phone number validation format using a regular expression (regex)
+	const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+
+	// Test the phone number against the regex pattern
+	if (!phoneRegex.test(phone)) {
+		// If the phone number doesn't match the pattern, respond with a 400 status and an error message
+		res.status(400).json({
+			message:
+				"Phone number is invalid. It should be in international format (e.g., +1234567890).",
+		});
+		return; // Exit the function if validation fails
+	}
 
 	// Call the next middleware function if all validations pass
-	next();
-};
-
-export const validateUserLogin = (req, res, next) => {
-	console.log("Validating user login");
-
 	next();
 };
