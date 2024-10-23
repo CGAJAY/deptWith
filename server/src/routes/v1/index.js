@@ -4,6 +4,9 @@ import { Router } from "express";
 // Import the authRouter from the auth.js file
 import { authRouter } from "./auth.js";
 
+// Import the balanceRouter from the balance.js file
+import { balanceRouter } from "./balance.js";
+
 // middleware to authenticate if user is logged in
 import { requiresAuthentication } from "../../middleware/auth.js";
 
@@ -21,6 +24,9 @@ v1Router.use("/auth", authRouter);
 
 // PRIVATE ROUTES (require a user to be logged in inorder to access them)
 v1Router.use(requiresAuthentication); // Protects all routes after it
+
+// /api/v1/balance
+v1Router.use("/balance", balanceRouter);
 
 // /api/v1/protected
 v1Router.get("/protected", (req, res) => {
