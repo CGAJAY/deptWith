@@ -4,6 +4,9 @@ import { Balance } from "../database/models/Balance.model.js";
 
 import bcrypt from "bcryptjs"; // Import bcrypt for password hashing
 
+// For generating a token with users data after login
+import { generateJwtToken } from "../utils/generate-jwt-token.js";
+
 // Define an asynchronous function to handle user registration
 export const registerUser = async (req, res) => {
 	try {
@@ -45,13 +48,13 @@ export const loginUser = async (req, res) => {
 		// Destructure the email and password from the request body
 		const { username, password } = req.body;
 
-		// Check if a user with this email exists in the database
-		const user = await User.findOne({ email });
+		// Check if a user with this username exists in the database
+		const user = await User.findOne({ username });
 
 		// If no user is found, return a 400 status with an error message
 		if (!user) {
 			res.status(400).json({
-				message: "Invalid email or password.",
+				message: "Incorrect Credentials.",
 			});
 			return; // Exit if the user is not found
 		}
@@ -70,14 +73,18 @@ export const loginUser = async (req, res) => {
 			return; // Exit if the password is incorrect
 		}
 
-		// Cookie in res object to store the cookie in the browser
-		res.cookie(
-			process.env.AUTH_COOKIE_NAME, // Name of the cookie
-			// Value of cookie, which is the user object converted to JSON
-			JSON.stringify(user.toObject())
-		);
+		// Cookie in res object to store the cookie in the browser without encrypting it with a token
+		// res.cookie(
+		// 	process.env.AUTH_COOKIE_NAME, // Name of the cookie
+		// 	// Value of cookie, which is the user object converted to JSON
+		// 	JSON.stringify(user.toObject())
+		// );
 
-		// If login is successful, send the user data (without the password) as a response
+		// if login is okay create a token and include user id in the token payload
+		// pass the res object to create a cookie containing the jwt
+		generateJwtToken(res, { _id: user._id });
+
+		// if login is okay send a message to say login is successful,
 		res.json({
 			message: "Login successful",
 		});
