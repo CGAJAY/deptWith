@@ -93,3 +93,10 @@ export const loginUser = async (req, res) => {
 		res.status(500).json({ message: "Server error" });
 	}
 };
+
+export const logout = async (req, res) => {
+	// Clear the cookie when the user logs out
+	res
+		.clearCookie(process.env.AUTH_COOKIE_NAME)
+		.json({ message: "Logout Successful" });
+};
