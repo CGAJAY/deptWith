@@ -22,6 +22,26 @@ export const validateUserRegistration = async (
 				.json({ message: "Username cannot be empty." });
 		}
 
+		// email: john@doe.com
+		// const emailArray = email.split("@")
+		// emailArray: ["john", "doe.com"]
+
+		// if (!emailArray[0] || !emailArray[1]) {
+		// 	return res
+		// 		.status(400)
+		// 		.json({ message: "Email is Invalid" });
+		// }
+
+		// second part of the email: doe.com
+		// const emailSecondPart = emailArray[1].split(".")
+		// emailSecondPart: ["doe", "com"]
+
+		// if (!emailSecondPart[0] || !emailSecondPart[1]) {
+		// 	return res
+		// 		.status(400)
+		// 		.json({ message: "Email is Invalid" });
+		// }
+
 		// Validate the email format using a regular expression (regex)
 		const emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
 		if (!emailRegex.test(email)) {
