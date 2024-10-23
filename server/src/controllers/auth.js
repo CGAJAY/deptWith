@@ -1,5 +1,6 @@
 // Import the 'User' model from the User file, which allows interaction with the User collection in the database
 import { User } from "../database/models/User.model.js";
+import { Balance } from "../database/models/Balance.model.js";
 
 import bcrypt from "bcryptjs"; // Import bcrypt for password hashing
 
@@ -23,8 +24,13 @@ export const registerUser = async (req, res) => {
 			password: hashedPassword, // Store the hashed password instead of the plain password
 		});
 
-		// Send back 200 response indicating OK the user was created and user data
-		res.status(201).json(user);
+		// Create balance for the user
+		await Balance.create({ user: user._id });
+
+		// Send back 200 response indicating OK the user was created
+		res
+			.status(201)
+			.json({ message: "User was created successfully" });
 	} catch (error) {
 		// If something goes wrong, send a 500 error response indicating a server issue
 		res.status(500).json({
