@@ -2,7 +2,8 @@ import jwt from "jsonwebtoken";
 
 // Generate a JWT token using the 'user' object as payload
 export const generateJwtToken = (res, user) => {
-	// payload includes the user details like the user's _id
+	// (user) is user details like the user's _id
+	// (res) is request object used for setting the cookie containing the token
 	// jwt.sign() takes in the payload, secret key and options such as the token's expiry.
 
 	const token = jwt.sign({ user }, process.env.JWT_SECRET, {
