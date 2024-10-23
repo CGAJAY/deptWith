@@ -60,6 +60,13 @@ app.use(express.json());
 // reads the Cookie header from incoming requests. It takes the cookie string and parses it into a JavaScript object, where each cookie's name is a key, and its corresponding value is the value of that key.
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+	console.log({ cookieInHome: req.cookies });
+
+	console.log("Request received on root path");
+	res.json({ message: "Silence is golden" });
+});
+
 // ROUTES (Define API endpoints)
 // Defines all routes starting with "/api/v1" using the v1Router
 app.use("/api/v1", v1Router);

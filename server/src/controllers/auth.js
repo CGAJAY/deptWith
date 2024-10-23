@@ -94,7 +94,7 @@ export const loginUser = async (req, res) => {
 	}
 };
 
-export const logout = async (req, res) => {
+export const logoutUser = async (req, res) => {
 	// Clear the cookie when the user logs out
 	res
 		.clearCookie(process.env.AUTH_COOKIE_NAME)
