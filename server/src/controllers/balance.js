@@ -1,6 +1,6 @@
 // checks if a given id is in the correct format.
 import { isValidObjectId } from "mongoose";
-import { Balance } from "../database/Models/Balance.js";
+import { Balance } from "../database/models/Balance.model.js";
 
 // This function retrieves a user's balance by their id
 export const getUserBalance = async (req, res) => {
