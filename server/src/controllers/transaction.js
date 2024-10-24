@@ -32,6 +32,24 @@ export const createTransaction = async (req, res) => {
 	transactionType =
 		transactionType.charAt(0).toUpperCase() +
 		transactionType.slice(1).toLowerCase();
+
+	try {
+		// Get the Balance document for the logged in user
+		const userBalanceDoc = await Balance.findOne({
+			user: userId,
+		});
+
+		// Grab the balance from the balance document
+		const userBalance = userBalanceDoc.balance;
+	} catch (error) {
+		console.log({ TransactionError: error });
+		return res
+			.status(StatusCodes.INTERNAL_SERVER_ERROR)
+			.json({
+				message:
+					"Something went wrong while processing your request",
+			});
+	}
 };
 
 // Check if user is logged in
