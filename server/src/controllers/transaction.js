@@ -85,6 +85,41 @@ export const createTransaction = async (req, res) => {
 				balance: userBalanceDoc.balance,
 				Transaction,
 			});
+		} else if (transaction_type === "Withdrawal") {
+			// Check if currently loggedIn user's balance is more than or equal to the amount
+			if (userBalance < amount) {
+				// Deny the request
+				return res
+					.status(StatusCodes.BAD_REQUEST)
+					.json({ message: "Not enough balance" });
+			}
+
+			// if userBalance > amount deduct amount from the balance
+			userBalanceDoc.balance -= amount;
+
+			//Update the userBalanceDoc to refelect the new balance
+			await userBalanceDoc.save();
+
+			// Create a transaction document for the transaction made
+			const transactionDoc = await Transaction.create({
+				user: userId,
+				amount,
+				transaction_type,
+			});
+
+			// Grab the amount and transaction_type from the transactionDoc
+			const { _id, user, updateAt, _v, ...Transaction } =
+				transactionDoc.toObject();
+
+			// respond with the updated user balance and the transaction details
+			return res.status(StatusCodes.OK).json({
+				balance: userBalanceDoc.balance,
+				Transaction,
+			});
+		} else {
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: "Transaction type invalid" });
 		}
 	} catch (error) {
 		console.log({ TransactionError: error });
