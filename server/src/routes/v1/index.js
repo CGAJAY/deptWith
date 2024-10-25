@@ -7,6 +7,9 @@ import { authRouter } from "./auth.js";
 // Import the balanceRouter from the balance.js file
 import { balanceRouter } from "./balance.js";
 
+// Import the transactionRouter from the transaction.js file
+import { transactionRouter } from "./transaction.js";
+
 // middleware to authenticate if user is logged in
 import { requiresAuthentication } from "../../middleware/auth.js";
 
@@ -27,6 +30,9 @@ v1Router.use(requiresAuthentication); // Protects all routes after it
 
 // /api/v1/balance
 v1Router.use("/balance", balanceRouter);
+
+// /api/v1/transaction
+v1Router.use("/transaction", transactionRouter);
 
 // /api/v1/protected
 v1Router.get("/protected", (req, res) => {
