@@ -1,11 +1,15 @@
 import { Router } from "express";
-import { createTransaction } from "../../controllers/transaction";
+import {
+	createTransaction,
+	getUserTransactions,
+} from "../../controllers/transaction";
 
 const transactionRouter = Router();
 
 // POST api/v1/transaction
 transactionRouter
 	.route("/") // setting up the root path for the router
+	.get(getUserTransactions) // handle get request to fetch all user transactions
 	.post(createTransaction); //handle post requests to create a new transaction
 
 export { transactionRouter };
