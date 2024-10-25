@@ -9,7 +9,7 @@ export const createTransaction = async (req, res) => {
 	const { userId } = req;
 
 	// get transaction details from the request body
-	let { amount, transactionType } = req.body;
+	let { amount, transaction_type } = req.body;
 
 	// Check if type of amount is not a number
 	// isNaN checks if result is (NaN), if true code executes
@@ -26,12 +26,12 @@ export const createTransaction = async (req, res) => {
 			.json({ message: "Amount must be more than 0" });
 	}
 
-	// Grab transactionType and reasign it the value in the correct format
-	// transactionType.charAt(0).toUpperCase(); get 1st char & converts to upperCase
-	// transactionType.slice(1).toLowerCase(); get rest of the string and converts to lowerCase
-	transactionType =
-		transactionType.charAt(0).toUpperCase() +
-		transactionType.slice(1).toLowerCase();
+	// Grab transaction_type and reasign it the value in the correct format
+	// transaction_type.charAt(0).toUpperCase(); get 1st char & converts to upperCase
+	// transaction_type.slice(1).toLowerCase(); get rest of the string and converts to lowerCase
+	transaction_type =
+		transaction_type.charAt(0).toUpperCase() +
+		transaction_type.slice(1).toLowerCase();
 
 	try {
 		// Get the Balance document for the logged in user
@@ -41,6 +41,51 @@ export const createTransaction = async (req, res) => {
 
 		// Grab the balance from the balance document
 		const userBalance = userBalanceDoc.balance;
+
+		// Check if transaction_type === Deposit
+		if (transaction_type === "Deposit") {
+			// handle deposits
+			// Deposits limitations
+
+			if (amount < 100) {
+				return res.status(StatusCodes.BAD_REQUEST).json({
+					message:
+						"Amount is less than the allowed minimum of 100",
+				});
+			}
+
+			if (amount > 100000) {
+				return res.status(StatusCodes.BAD_REQUEST).json({
+					message:
+						"Amount is more than the allowed maximum of 100000",
+				});
+			}
+
+			// if type is deposit, increase the logged in user's balance by the amount
+			userBalanceDoc.balance += amount;
+
+			// TODO: Introduce transactions to deal with concurrency and incomplete processes
+
+			// op 1 is updating the loggedIn user's balance
+			await userBalanceDoc.save();
+
+			// op 2 creating a document for the deposit transaction done by the loggedIn user
+			const transactionDoc = await Transaction.create({
+				user: userId,
+				amount,
+				transaction_type,
+			});
+
+			// Grab the amount and transaction_type from the transactionDoc
+			const { _id, user, updateAt, _v, ...Transaction } =
+				transactionDoc.toObject();
+
+			// respond with the updated user balance and the transaction details
+			return res.status(StatusCodes.OK).json({
+				balance: userBalanceDoc.balance,
+				Transaction,
+			});
+		}
 	} catch (error) {
 		console.log({ TransactionError: error });
 		return res
