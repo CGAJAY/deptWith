@@ -132,6 +132,26 @@ export const createTransaction = async (req, res) => {
 	}
 };
 
+export const getUserTransactions = async (req, res) => {
+	// Grab the userId from the Request body
+	const { userId } = req;
+
+	try {
+		// Grab all transactions in the transaction collection
+		const transactions = await Transaction.find({
+			user: userId,
+		});
+	} catch (error) {
+		console.log({ ServerError: error });
+		return res
+			.status(StatusCodes.INTERNAL_SERVER_ERROR)
+			.json({
+				message:
+					"Something went wrong while processing your request",
+			});
+	}
+};
+
 // Check if user is logged in
 // Get the balance of the logged-in user
 // Validate the transaction by checking if  (amount > 0 && amount < balance)
