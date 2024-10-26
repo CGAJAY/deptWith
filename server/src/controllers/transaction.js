@@ -1,4 +1,4 @@
-import { isValidObjectId } from "mongoose";
+import { isValidObjectId, startSession } from "mongoose";
 import { Balance } from "../database/models/Balance.model.js";
 import { User } from "../database/models/User.model.js";
 import { Transaction } from "../database/models/Transaction.model.js";
@@ -11,8 +11,7 @@ export const createTransaction = async (req, res) => {
 	// get transaction details from the request body
 	let { amount, transaction_type } = req.body;
 
-	// Check if type of amount is not a number
-	// isNaN checks if result is (NaN), if true code executes
+	// Make sure amount is a number
 	if (isNaN(parseInt(amount))) {
 		return res
 			.status(StatusCodes.BAD_REQUEST)
@@ -26,12 +25,16 @@ export const createTransaction = async (req, res) => {
 			.json({ message: "Amount must be more than 0" });
 	}
 
-	// Grab transaction_type and reasign it the value in the correct format
-	// transaction_type.charAt(0).toUpperCase(); get 1st char & converts to upperCase
-	// transaction_type.slice(1).toLowerCase(); get rest of the string and converts to lowerCase
+	// Capitalise the first letter of transaction_type
 	transaction_type =
 		transaction_type.charAt(0).toUpperCase() +
 		transaction_type.slice(1).toLowerCase();
+
+	// Start a session for the trasaction
+	// lets us group multiple actions together(updating bal & creating transaction document)
+	// If one fails we cancel everything in the session
+	const session = await startSession();
+	session.startTransaction();
 
 	try {
 		// Get the Balance document for the logged in user
@@ -61,24 +64,29 @@ export const createTransaction = async (req, res) => {
 				});
 			}
 
-			// if type is deposit, increase the logged in user's balance by the amount
+			//  increase the logged in user's balance by the amount
 			userBalanceDoc.balance += amount;
 
-			// TODO: Introduce transactions to deal with concurrency and incomplete processes
+			// save the updated balance within the transaction session
+			await userBalanceDoc.save({ session });
 
-			// op 1 is updating the loggedIn user's balance
-			await userBalanceDoc.save();
+			// Create a transaction record within the same session
+			const transactionDoc = await Transaction.create(
+				{
+					user: userId,
+					amount,
+					transaction_type,
+				},
 
-			// op 2 creating a document for the deposit transaction done by the loggedIn user
-			const transactionDoc = await Transaction.create({
-				user: userId,
-				amount,
-				transaction_type,
-			});
+				{ session }
+			);
 
 			// Grab the amount and transaction_type from the transactionDoc
 			const { _id, user, updateAt, _v, ...Transaction } =
 				transactionDoc.toObject();
+
+			// Commit the transaction, saving both the balance and transaction record if successful
+			await session.commitTransaction();
 
 			// respond with the updated user balance and the transaction details
 			return res.status(StatusCodes.OK).json({

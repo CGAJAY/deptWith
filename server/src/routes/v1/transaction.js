@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
 	createTransaction,
 	getUserTransactions,
-} from "../../controllers/transaction";
+} from "../../controllers/transaction.js";
 
 const transactionRouter = Router();
 
