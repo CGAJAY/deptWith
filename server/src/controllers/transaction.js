@@ -5,39 +5,41 @@ import { Transaction } from "../database/models/Transaction.model.js";
 import { StatusCodes } from "http-status-codes";
 
 export const createTransaction = async (req, res) => {
-	// get the currently logged in user
+	// Get the currently logged-in user and transaction details
 	const { userId } = req;
-	// get the details of the transaction (amount and the type)
 	let { amount, transaction_type } = req.body;
 
-	// Ensure that the amount that is received is a number
-	if (isNaN(parseInt(amount))) {
+	// Ensure that the amount is a number and greater than 0
+	amount = parseInt(amount);
+	if (isNaN(amount) || amount <= 0) {
 		return res.status(StatusCodes.BAD_REQUEST).json({
-			message: "Amount must be a number",
+			message: "Amount must be a positive number",
 		});
 	}
 
-	if (parseInt(amount) === 0) {
-		return res.status(StatusCodes.BAD_REQUEST).json({
-			message: "Amount must be more than 0",
-		});
-	}
-
+	// Capitalize the transaction type (e.g., "Deposit", "Withdrawal")
 	transaction_type =
 		transaction_type.charAt(0).toUpperCase() +
 		transaction_type.slice(1).toLowerCase();
 
+	// Start a MongoDB session
+	const session = await startSession();
+	session.startTransaction();
+
 	try {
+		// Fetch the user's balance within the transaction session
 		const userBalanceDoc = await Balance.findOne({
 			user: userId,
-		});
+		}).session(session);
+
+		if (!userBalanceDoc)
+			throw new Error("User balance document not found");
 
 		const userBalance = userBalanceDoc.balance;
 
+		// Handle deposit transactions
 		if (transaction_type === "Deposit") {
-			// Handle the deposit here
 			// Deposit limitations
-
 			if (amount < 100) {
 				return res.status(StatusCodes.BAD_REQUEST).json({
 					message:
@@ -52,22 +54,28 @@ export const createTransaction = async (req, res) => {
 				});
 			}
 
-			// if type is deposit, increase the logged in user's balance by the amount
-			// userBalanceDoc.balance = userBalanceDoc.balance + amount;
-			userBalanceDoc.balance += parseInt(amount);
+			// Increase the balance by the amount
+			userBalanceDoc.balance += amount;
+			await userBalanceDoc.save({ session });
 
-			// TODO: Introduce transactions to deal with concurrency and incomplete processes
-			// OP 1
-			await userBalanceDoc.save();
+			// Create a transaction document
+			const transactionDoc = await Transaction.create(
+				[
+					{
+						user: userId,
+						amount,
+						transaction_type,
+					},
+				],
+				{ session }
+			);
 
-			// OP 2
-			const transactionDoc = await Transaction.create({
-				user: userId,
-				amount,
-				transaction_type,
-			});
+			// Commit the transaction
+			await session.commitTransaction();
 
-			// remove the values that we do not need to send back to the client, and have the ones that we need in the transaction var
+			console.log(transactionDoc);
+
+			// Remove unneeded values for response and send success
 			const { _id, user, updatedAt, __v, ...transaction } =
 				transactionDoc.toObject();
 
@@ -76,47 +84,59 @@ export const createTransaction = async (req, res) => {
 				transaction,
 			});
 		} else if (transaction_type === "Withdrawal") {
-			// Handle the withdrawal here
-			// if type is withdrawal, check if the currently logged in user's balance is more than or equal to the amount
+			// Handle withdrawal transactions
 			if (userBalance < amount) {
-				// if it is not, deny the request
 				return res.status(StatusCodes.BAD_REQUEST).json({
 					message: "Not enough balance",
 				});
 			}
 
-			// if it is, deduct the amount from the balance
-			userBalanceDoc.balance -= parseInt(amount);
+			// Deduct the amount from the balance
+			userBalanceDoc.balance -= amount;
+			await userBalanceDoc.save({ session });
 
-			await userBalanceDoc.save();
+			// Create a transaction document
+			const transactionDoc = await Transaction.create(
+				[
+					{
+						user: userId,
+						amount,
+						transaction_type,
+					},
+				],
+				{ session }
+			);
 
-			// OP 2
-			const transactionDoc = await Transaction.create({
-				user: userId,
-				amount,
-				transaction_type,
-			});
+			// Commit the transaction
+			await session.commitTransaction();
 
-			// remove the values that we do not need to send back to the client, and have the ones that we need in the transaction var
+			// Remove unneeded values for response and send success
 			const { _id, user, updatedAt, __v, ...transaction } =
-				transactionDoc.toObject();
+				transactionDoc[0].toObject();
 
 			return res.status(StatusCodes.OK).json({
 				balance: userBalanceDoc.balance,
 				transaction,
 			});
 		} else {
-			// Not a permitted type, respond with error
+			return res.status(StatusCodes.BAD_REQUEST).json({
+				message: "Invalid transaction type",
+			});
 		}
 	} catch (error) {
 		console.log({ TransactionError: error });
 
+		// Abort the transaction on error and send failure response
+		await session.abortTransaction();
 		return res
 			.status(StatusCodes.INTERNAL_SERVER_ERROR)
 			.json({
 				message:
 					"Something went wrong while processing your request.",
 			});
+	} finally {
+		// End the session
+		session.endSession();
 	}
 };
 
